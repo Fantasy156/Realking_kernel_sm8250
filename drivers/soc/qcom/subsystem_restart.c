@@ -1245,7 +1245,10 @@ int subsystem_restart_dev(struct subsys_device *dev)
 		return 0;
 	}
 
-	__subsystem_restart_dev(dev);
+	if (!strcmp(name, "modem") || !strcmp(name, "adsp"))
+		dev->restart_level = RESET_SUBSYS_COUPLED;
+
+        __subsystem_restart_dev(dev);
 
 	module_put(dev->owner);
 	put_device(&dev->dev);
@@ -1647,8 +1650,7 @@ static int subsys_parse_devicetree(struct subsys_desc *desc)
 			desc->generic_irq = ret;
 	}
 
-	desc->ignore_ssr_failure = of_property_read_bool(pdev->dev.of_node,
-						"qcom,ignore-ssr-failure");
+	desc->ignore_ssr_failure = true;
 
 	order = ssr_parse_restart_orders(desc);
 	if (IS_ERR(order)) {
@@ -1812,6 +1814,7 @@ struct subsys_device *subsys_register(struct subsys_desc *desc)
 	subsys->notif_state = -1;
 	subsys->desc->sysmon_pid = -1;
 	subsys->desc->state = NULL;
+	subsys->restart_level = RESET_SUBSYS_COUPLED;
 	strlcpy(subsys->desc->fw_name, desc->name,
 			sizeof(subsys->desc->fw_name));
 
